@@ -169,7 +169,6 @@ mem_init(void)
 	check_page_alloc();
 
 	check_page();
-	panic("mem_init: This function is not finished\n");
 
 	//////////////////////////////////////////////////////////////////////
 	// Now we set up virtual memory
@@ -181,6 +180,9 @@ mem_init(void)
 	//      (ie. perm = PTE_U | PTE_P)
 	//    - pages itself -- kernel RW, user NONE
 	// Your code goes here:
+
+	boot_map_region(kern_pgdir, UPAGES, sizeof(PageInfo) * npages,
+			PADDR(pages), PTE_U | PTE_P);
 
 	//////////////////////////////////////////////////////////////////////
 	// Use the physical memory that 'bootstack' refers to as the kernel
@@ -194,6 +196,9 @@ mem_init(void)
 	//     Permissions: kernel RW, user NONE
 	// Your code goes here:
 
+	boot_map_region(kern_pgdir, (KSTACKTOP - KSTKSIZE), KSTKSIZE,
+			PADDR(bootstack), PTE_W);
+
 	//////////////////////////////////////////////////////////////////////
 	// Map all of physical memory at KERNBASE.
 	// Ie.  the VA range [KERNBASE, 2^32) should map to
@@ -202,6 +207,9 @@ mem_init(void)
 	// we just set up the mapping anyway.
 	// Permissions: kernel RW, user NONE
 	// Your code goes here:
+
+	boot_map_region(kern_pgdir, KERNBASE, ((size_t)(-1) - KERNBASE + 1),
+			0, PTE_W);
 
 	// Check that the initial page directory has been set up correctly.
 	check_kern_pgdir();
@@ -449,6 +457,10 @@ boot_map_region(pde_t *pgdir, uintptr_t va, size_t size, physaddr_t pa, int perm
 		return;
 	}
 
+	if (size % PGSIZE) {
+		panic("invalid map size %d", size);
+	}
+
 	for (int i = 0; i < (size/PGSIZE); i++) {
 		pte = pgdir_walk(pgdir, (char *)(va + i*PGSIZE), TRUE);
 
@@ -458,8 +470,9 @@ boot_map_region(pde_t *pgdir, uintptr_t va, size_t size, physaddr_t pa, int perm
 		}
 
 		*pte = (pa + i*PGSIZE) | PTE_P | perm;
-		cprintf("DEBUG: mapped %x to %x\n",
-			va + i*PGSIZE, pa + i*PGSIZE);
+		if (i < 1 || i == (size/PGSIZE - 1))
+			cprintf("DEBUG: mapped %x to %x\n",
+				va + i*PGSIZE, pa + i*PGSIZE);
 	}
 
 	return;
@@ -783,8 +796,10 @@ check_kern_pgdir(void)
 		assert(check_va2pa(pgdir, KERNBASE + i) == i);
 
 	// check kernel stack
-	for (i = 0; i < KSTKSIZE; i += PGSIZE)
+	for (i = 0; i < KSTKSIZE; i += PGSIZE) {
+		
 		assert(check_va2pa(pgdir, KSTACKTOP - KSTKSIZE + i) == PADDR(bootstack) + i);
+	}
 	assert(check_va2pa(pgdir, KSTACKTOP - PTSIZE) == ~0);
 
 	// check PDE permissions
