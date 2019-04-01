@@ -43,7 +43,7 @@ enum EnvType {
 	ENV_TYPE_USER = 0,
 };
 
-struct Env {
+typedef struct Env {
 	struct Trapframe env_tf;	// Saved registers
 	struct Env *env_link;		// Next free Env
 	envid_t env_id;			// Unique environment identifier
@@ -54,6 +54,6 @@ struct Env {
 
 	// Address space
 	pde_t *env_pgdir;		// Kernel virtual address of page dir
-};
+} Env;
 
 #endif // !JOS_INC_ENV_H

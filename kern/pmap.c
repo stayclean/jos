@@ -161,6 +161,8 @@ mem_init(void)
 	//////////////////////////////////////////////////////////////////////
 	// Make 'envs' point to an array of size 'NENV' of 'struct Env'.
 	// LAB 3: Your code here.
+	envs = (Env *)boot_alloc(sizeof(Env) * NENV);
+	memset(envs, 0, sizeof(Env) * NENV);
 
 	//////////////////////////////////////////////////////////////////////
 	// Now that we've allocated the initial kernel data structures, we set
@@ -197,6 +199,12 @@ mem_init(void)
 	//    - envs itself -- kernel RW, user NONE
 	// LAB 3: Your code here.
 
+	boot_map_region(kern_pgdir, UENVS, (sizeof(Env) * NENV),
+			PADDR(envs), PTE_U | PTE_P);
+
+	boot_map_region(kern_pgdir, UENVS, (sizeof(Env) * NENV),
+			PADDR(envs), PTE_P | PTE_W);
+
 	//////////////////////////////////////////////////////////////////////
 	// Use the physical memory that 'bootstack' refers to as the kernel
 	// stack.  The kernel stack grows down from virtual address KSTACKTOP.
@@ -210,7 +218,7 @@ mem_init(void)
 	// Your code goes here:
 
 	boot_map_region(kern_pgdir, (KSTACKTOP - KSTKSIZE), KSTKSIZE,
-			PADDR(bootstack), PTE_W);
+			PADDR(bootstack), PTE_W | PTE_P);
 
 	//////////////////////////////////////////////////////////////////////
 	// Map all of physical memory at KERNBASE.
@@ -222,7 +230,7 @@ mem_init(void)
 	// Your code goes here:
 
 	boot_map_region(kern_pgdir, KERNBASE, ((size_t)(-1) - KERNBASE + 1),
-			0, PTE_W);
+			0, PTE_W | PTE_P);
 
 	// Check that the initial page directory has been set up correctly.
 	check_kern_pgdir();
