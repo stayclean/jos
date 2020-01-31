@@ -162,7 +162,6 @@ mem_init(void)
 	// Make 'envs' point to an array of size 'NENV' of 'struct Env'.
 	// LAB 3: Your code here.
 	envs = (Env *)boot_alloc(sizeof(Env) * NENV);
-	memset(envs, 0, sizeof(Env) * NENV);
 
 	//////////////////////////////////////////////////////////////////////
 	// Now that we've allocated the initial kernel data structures, we set
