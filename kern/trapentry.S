@@ -46,10 +46,46 @@
 /*
  * Lab 3: Your code here for generating entry points for the different traps.
  */
+		# check intel x86 manual to see whether have error code
+		TRAPHANDLER_NOEC(t0_entry, T_DIVIDE) ;
+		TRAPHANDLER_NOEC(t1_entry, T_DEBUG) ;
+		TRAPHANDLER_NOEC(t2_entry, T_NMI) ;
+		TRAPHANDLER_NOEC(t3_entry, T_BRKPT) ;
+		TRAPHANDLER_NOEC(t4_entry, T_OFLOW) ;
+		TRAPHANDLER_NOEC(t5_entry, T_BOUND) ;
+		TRAPHANDLER_NOEC(t6_entry, T_ILLOP) ;
+		TRAPHANDLER_NOEC(t7_entry, T_DEVICE) ;
+		TRAPHANDLER(t8_entry, T_DBLFLT) ;
+		# 9 skipped
+		TRAPHANDLER(t10_entry, T_TSS) ;
+		TRAPHANDLER(t11_entry, T_SEGNP) ;
+		TRAPHANDLER(t12_entry, T_STACK) ;
+		TRAPHANDLER(t13_entry, T_GPFLT) ;
+		TRAPHANDLER(t14_entry, T_PGFLT) ;
+		# 15 skipped
+		TRAPHANDLER_NOEC(t16_entry, T_FPERR) ;
+		TRAPHANDLER_NOEC(t17_entry, T_ALIGN) ;
+		TRAPHANDLER_NOEC(t18_entry, T_MCHK) ;
+		TRAPHANDLER_NOEC(t19_entry, T_SIMDERR) ;
+
+		TRAPHANDLER_NOEC(t48_entry, T_SYSCALL) ;
 
 
+
+.set KD_SEG, 0x10        	# kernel data segment selector
 
 /*
  * Lab 3: Your code here for _alltraps
  */
+_alltraps:
+		pushl %ds				;
+		pushl %es				;
+		pushal					;
+		# ax corrupted?
+		movw $KD_SEG, %ax		;
+		movw %ax, %ds			;
+		movw %ax, %es			;
 
+		# parameter *Trapframe
+		pushl %esp				;
+		call trap				;
