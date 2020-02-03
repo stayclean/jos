@@ -74,6 +74,12 @@ trap_init(void)
 	for (i = 0; i < 20; i++) {
 		if (i == 9 || i == 15)
 			continue;
+
+		if (i == T_BRKPT) {
+			SETGATE(idt[T_BRKPT], 1, GD_KT, funs[T_BRKPT], 3);
+			continue;
+		}
+
 		SETGATE(idt[i], 1, GD_KT, funs[i], 0);
 	}
 
@@ -161,6 +167,9 @@ trap_dispatch(struct Trapframe *tf)
 	switch (tf->tf_trapno) {
 	case T_PGFLT:
 		page_fault_handler(tf);
+		return;
+	case T_BRKPT:
+		monitor(tf);
 		return;
 	default:
 		cprintf("unexpected trap\n");
