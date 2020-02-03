@@ -201,9 +201,6 @@ mem_init(void)
 	boot_map_region(kern_pgdir, UENVS, (sizeof(Env) * NENV),
 			PADDR(envs), PTE_U | PTE_P);
 
-	boot_map_region(kern_pgdir, UENVS, (sizeof(Env) * NENV),
-			PADDR(envs), PTE_P | PTE_W);
-
 	//////////////////////////////////////////////////////////////////////
 	// Use the physical memory that 'bootstack' refers to as the kernel
 	// stack.  The kernel stack grows down from virtual address KSTACKTOP.

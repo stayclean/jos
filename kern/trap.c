@@ -83,7 +83,7 @@ trap_init(void)
 		SETGATE(idt[i], 1, GD_KT, funs[i], 0);
 	}
 
-	SETGATE(idt[T_SYSCALL], 1, GD_KT, t48_entry, 0);
+	SETGATE(idt[T_SYSCALL], 1, GD_KT, t48_entry, 3);
 
 	// Per-CPU setup 
 	trap_init_percpu();
@@ -163,6 +163,7 @@ trap_dispatch(struct Trapframe *tf)
 {
 	// Handle processor exceptions.
 	// LAB 3: Your code here.
+	int ret;
 
 	switch (tf->tf_trapno) {
 	case T_PGFLT:
@@ -170,6 +171,13 @@ trap_dispatch(struct Trapframe *tf)
 		return;
 	case T_BRKPT:
 		monitor(tf);
+		return;
+	case T_SYSCALL:
+		ret = syscall(tf->tf_regs.reg_eax, tf->tf_regs.reg_edx,
+					  tf->tf_regs.reg_ecx, tf->tf_regs.reg_ebx,
+					  tf->tf_regs.reg_edi, tf->tf_regs.reg_esi);
+
+		tf->tf_regs.reg_eax = ret; /* save ret value in eax */
 		return;
 	default:
 		cprintf("unexpected trap\n");
