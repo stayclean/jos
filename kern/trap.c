@@ -63,50 +63,21 @@ void
 trap_init(void)
 {
 	extern struct Segdesc gdt[];
-	extern void t0_entry();
-	extern void t1_entry();
-	extern void t2_entry();
-	extern void t3_entry();
-	extern void t4_entry();
-	extern void t5_entry();
-	extern void t6_entry();
-	extern void t7_entry();
-	extern void t8_entry();
-
-	extern void t10_entry();
-	extern void t11_entry();
-	extern void t12_entry();
-	extern void t13_entry();
-	extern void t14_entry();
-
-	extern void t16_entry();
-	extern void t17_entry();
-	extern void t18_entry();
-	extern void t19_entry();
-
-	extern void t48_entry();
 
 	// LAB 3: Your code here.
-	SETGATE(idt[T_DIVIDE], 1, GD_KT, t0_entry, 0);
-	SETGATE(idt[T_DEBUG], 1, GD_KT, t1_entry, 0);
-	SETGATE(idt[T_NMI], 1, GD_KT, t2_entry, 0);
-	SETGATE(idt[T_BRKPT], 1, GD_KT, t3_entry, 0);
-	SETGATE(idt[T_OFLOW], 1, GD_KT, t4_entry, 0);
-	SETGATE(idt[T_BOUND], 1, GD_KT, t5_entry, 0);
-	SETGATE(idt[T_ILLOP], 1, GD_KT, t6_entry, 0);
-	SETGATE(idt[T_DEVICE], 1, GD_KT, t7_entry, 0);
-	SETGATE(idt[T_DBLFLT], 1, GD_KT, t8_entry, 0);
+	extern void t48_entry();
 
-	SETGATE(idt[T_TSS], 1, GD_KT, t10_entry, 0);
-	SETGATE(idt[T_SEGNP], 1, GD_KT, t11_entry, 0);
-	SETGATE(idt[T_STACK], 1, GD_KT, t12_entry, 0);
-	SETGATE(idt[T_GPFLT], 1, GD_KT, t13_entry, 0);
-	SETGATE(idt[T_PGFLT], 1, GD_KT, t14_entry, 0);
+	extern void (*funs[])(void);
 
-	SETGATE(idt[T_FPERR], 1, GD_KT, t16_entry, 0);
-	SETGATE(idt[T_ALIGN], 1, GD_KT, t17_entry, 0);
-	SETGATE(idt[T_MCHK], 1, GD_KT, t18_entry, 0);
-	SETGATE(idt[T_SIMDERR], 1, GD_KT, t19_entry, 0);
+	int i;
+
+	for (i = 0; i < 20; i++) {
+		if (i == 9 || i == 15)
+			continue;
+		SETGATE(idt[i], 1, GD_KT, funs[i], 0);
+	}
+
+	SETGATE(idt[T_SYSCALL], 1, GD_KT, t48_entry, 0);
 
 	// Per-CPU setup 
 	trap_init_percpu();
