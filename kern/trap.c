@@ -72,6 +72,25 @@ trap_init(void)
 	extern struct Segdesc gdt[];
 
 	// LAB 3: Your code here.
+	extern void t48_entry();
+
+	extern void (*funs[])(void);
+
+	int i;
+
+	for (i = 0; i < 20; i++) {
+		if (i == 9 || i == 15)
+			continue;
+
+		if (i == T_BRKPT) {
+			SETGATE(idt[T_BRKPT], 1, GD_KT, funs[T_BRKPT], 3);
+			continue;
+		}
+
+		SETGATE(idt[i], 1, GD_KT, funs[i], 0);
+	}
+
+	SETGATE(idt[T_SYSCALL], 1, GD_KT, t48_entry, 3);
 
 	// Per-CPU setup 
 	trap_init_percpu();
@@ -114,7 +133,7 @@ trap_init_percpu(void)
 
 	// Initialize the TSS slot of the gdt.
 	gdt[GD_TSS0 >> 3] = SEG16(STS_T32A, (uint32_t) (&ts),
-					sizeof(struct Taskstate) - 1, 0);
+								sizeof(struct Taskstate) - 1, 0);
 	gdt[GD_TSS0 >> 3].sd_s = 0;
 
 	// Load the TSS selector (like other segment selectors, the
@@ -176,6 +195,25 @@ trap_dispatch(struct Trapframe *tf)
 {
 	// Handle processor exceptions.
 	// LAB 3: Your code here.
+	int ret;
+
+	switch (tf->tf_trapno) {
+	case T_PGFLT:
+		page_fault_handler(tf);
+		return;
+	case T_BRKPT:
+		monitor(tf);
+		return;
+	case T_SYSCALL:
+		ret = syscall(tf->tf_regs.reg_eax, tf->tf_regs.reg_edx,
+					  tf->tf_regs.reg_ecx, tf->tf_regs.reg_ebx,
+					  tf->tf_regs.reg_edi, tf->tf_regs.reg_esi);
+
+		tf->tf_regs.reg_eax = ret; /* save ret value in eax */
+		return;
+	default:
+		cprintf("unexpected trap\n");
+	}
 
 	// Handle spurious interrupts
 	// The hardware sometimes raises these because of noise on the
@@ -193,7 +231,7 @@ trap_dispatch(struct Trapframe *tf)
 	// Unexpected trap: The user process or the kernel has a bug.
 	print_trapframe(tf);
 	if (tf->tf_cs == GD_KT)
-		panic("unhandled trap in kernel");
+		panic("unhandled trap in kernel\n");
 	else {
 		env_destroy(curenv);
 		return;
@@ -271,7 +309,12 @@ page_fault_handler(struct Trapframe *tf)
 	// Handle kernel-mode page faults.
 
 	// LAB 3: Your code here.
-
+	if ((tf->tf_cs & 3) == 0) {
+		panic("kernel fault va %08x\n [%s, %s, %s]\n", fault_va,
+			tf->tf_err & 4 ? "user" : "kernel",
+			tf->tf_err & 2 ? "write" : "read",
+			tf->tf_err & 1 ? "protection" : "not-present");
+	}
 	// We've already handled kernel-mode exceptions, so if we get here,
 	// the page fault happened in user mode.
 

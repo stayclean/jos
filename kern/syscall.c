@@ -271,9 +271,31 @@ syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
 	// Return any appropriate return value.
 	// LAB 3: Your code here.
 
-	panic("syscall not implemented");
+	// panic("syscall not implemented\n");
 
 	switch (syscallno) {
+	case SYS_cputs:
+	{
+		char *s = (char *)a1;
+		int i = 0;
+
+		user_mem_assert(curenv, s, a2, PTE_U);
+
+		while (i < a2)
+			cputchar(s[i++]);
+
+		return a2;
+	}
+
+	case SYS_getenvid:
+	{
+		return sys_getenvid();
+	}
+	case SYS_env_destroy:
+	{
+		return sys_env_destroy(curenv->env_id);
+	}
+
 	default:
 		return -E_INVAL;
 	}

@@ -22,6 +22,8 @@ umain(int argc, char **argv)
 			panic("bigarray[%d] didn't hold its value!\n", i);
 
 	cprintf("Yes, good.  Now doing a wild write off the end...\n");
+	/* a entry in PGT 1K * 4K = 4M, more than 4M will goes to next pte */
+
 	bigarray[ARRAYSIZE+1024] = 0;
 	panic("SHOULD HAVE TRAPPED!!!");
 }
