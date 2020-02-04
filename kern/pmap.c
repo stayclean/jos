@@ -215,8 +215,10 @@ mem_init(void)
 	//     Permissions: kernel RW, user NONE
 	// Your code goes here:
 
-	boot_map_region(kern_pgdir, (KSTACKTOP - KSTKSIZE), KSTKSIZE,
-			PADDR(bootstack), PTE_W | PTE_P);
+	/* boot_map_region(kern_pgdir, (KSTACKTOP - KSTKSIZE), KSTKSIZE, */
+	/* 		PADDR(bootstack), PTE_W | PTE_P); */
+
+	/* should be no more needed */
 
 	//////////////////////////////////////////////////////////////////////
 	// Map all of physical memory at KERNBASE.
@@ -226,6 +228,8 @@ mem_init(void)
 	// we just set up the mapping anyway.
 	// Permissions: kernel RW, user NONE
 	// Your code goes here:
+	boot_map_region(kern_pgdir, KERNBASE, ((size_t)(-1) - KERNBASE + 1),
+					0, PTE_W);
 
 	// Initialize the SMP-related parts of the memory map
 	mem_init_mp();
@@ -277,6 +281,15 @@ mem_init_mp(void)
 	//     Permissions: kernel RW, user NONE
 	//
 	// LAB 4: Your code here:
+	int i;
+	uintptr_t kstacktop_i;
+
+	for (i = 0; i < NCPU; i++) {
+		kstacktop_i = KSTACKTOP - i * (KSTKSIZE + KSTKGAP);
+
+		boot_map_region(kern_pgdir, kstacktop_i - KSTKSIZE, KSTKSIZE,
+						PADDR(percpu_kstacks[i]), PTE_W);
+	}
 
 }
 
@@ -329,6 +342,13 @@ page_init(void)
 			continue;
 		}
 		// [1, IOPHYSMEM) bootloader was there, discard and mark free now
+
+		if (i == (MPENTRY_PADDR >> PGSHIFT)) {
+			pages[i].pp_ref = 1;
+			pages[i].pp_link = NULL;
+
+			continue;
+		}
 
 		if (i >= (IOPHYSMEM >> PGSHIFT)
 		    && i < (EXTPHYSMEM >> PGSHIFT)) {
@@ -681,6 +701,7 @@ mmio_map_region(physaddr_t pa, size_t size)
 	// (just like nextfree in boot_alloc).
 	static uintptr_t base = MMIOBASE;
 
+
 	// Reserve size bytes of virtual memory starting at base and
 	// map physical pages [pa,pa+size) to virtual addresses
 	// [base,base+size).  Since this is device memory and not
@@ -699,7 +720,15 @@ mmio_map_region(physaddr_t pa, size_t size)
 	// Hint: The staff solution uses boot_map_region.
 	//
 	// Your code here:
-	panic("mmio_map_region not implemented");
+	if (!ALIGN(pa, PGSIZE))
+		panic("pa 0x%x not aligned", pa);
+
+	cprintf("mmio map 0x%x to 0x%x, len 0x%x\n", pa, base, size);
+	boot_map_region(kern_pgdir, base, ROUNDUP(size, PGSIZE), pa,
+				PTE_W | PTE_PCD | PTE_PWT);
+
+	base += ROUNDUP(size, PGSIZE);
+	return (char *)base - ROUNDUP(size, PGSIZE);
 }
 
 static uintptr_t user_mem_check_addr;
