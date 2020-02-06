@@ -31,6 +31,45 @@ sched_yield(void)
 	// LAB 4: Your code here.
 
 	// sched_halt never returns
+	int i, chosen;
+
+	if (curenv) {
+		chosen = ENVX(curenv->env_id);
+		i = chosen + 1;
+		envs[chosen].env_status = ENV_RUNNABLE;
+	}
+	else {
+		chosen = 0;
+		i = 0;
+	}
+
+	for (; i < NENV; i++)  {
+		if (envs[i].env_status == ENV_RUNNABLE) {
+			chosen = i;
+			envs[i].env_status = ENV_RUNNING;
+			break;
+		}
+	}
+
+	if (chosen != i || chosen == 0) {
+		cprintf("enter %d, %d\n", chosen, i);
+		for (i = 0; i <= chosen; i++) {
+			if (envs[i].env_status == ENV_RUNNABLE) {
+				cprintf("chosen %d\n", chosen);
+				chosen = i;
+				envs[chosen].env_status = ENV_RUNNING;
+				break;
+			}
+		}
+	}
+
+	if (envs[chosen].env_status == ENV_RUNNING) {
+		curenv = &envs[chosen];
+		cprintf("run env %d\n", chosen);
+		env_run(curenv);
+	}
+
+	cprintf("no env available, CPU %d halt.", cpunum());
 	sched_halt();
 }
 
