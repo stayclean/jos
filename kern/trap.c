@@ -354,11 +354,43 @@ page_fault_handler(struct Trapframe *tf)
 	//   (the 'tf' variable points at 'curenv->env_tf').
 
 	// LAB 4: Your code here.
+	pte_t *pte;
+	struct UTrapframe *utf;
+	uintptr_t new_uxstack_bottom;
+	
+	if (NULL == curenv->env_pgfault_upcall) {
+		// Destroy the environment that caused the fault.
+		cprintf("[%08x] user fault va %08x ip %08x\n",
+				curenv->env_id, fault_va, tf->tf_eip);
+		print_trapframe(tf);
+		env_destroy(curenv);
+		return;
+	}
 
-	// Destroy the environment that caused the fault.
-	cprintf("[%08x] user fault va %08x ip %08x\n",
-		curenv->env_id, fault_va, tf->tf_eip);
-	print_trapframe(tf);
-	env_destroy(curenv);
+	cprintf("handle! fault va 0x%x\n", fault_va);
+
+	if (tf->tf_esp >= UXSTACKTOP - PGSIZE && tf->tf_esp < UXSTACKTOP)
+		new_uxstack_bottom = tf->tf_esp - sizeof(struct UTrapframe) - 4;
+	else
+		new_uxstack_bottom = UXSTACKTOP - sizeof(struct UTrapframe);
+
+	user_mem_assert(curenv, (void *)new_uxstack_bottom,
+					sizeof(struct UTrapframe), PTE_W); /* 1 test? */
+
+	utf = (struct UTrapframe *)new_uxstack_bottom;
+
+	utf->utf_fault_va = fault_va;
+	utf->utf_err = tf->tf_err;
+
+	utf->utf_regs = tf->tf_regs;
+	utf->utf_eip = tf->tf_eip;
+	utf->utf_eflags = tf->tf_eflags;
+
+	utf->utf_esp = tf->tf_esp;
+
+	tf->tf_eip = (uintptr_t)curenv->env_pgfault_upcall;
+	tf->tf_esp = new_uxstack_bottom;
+
+	env_run(curenv);
 }
 

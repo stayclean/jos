@@ -573,7 +573,6 @@ env_run(struct Env *e)
 
 	lcr3(PADDR(e->env_pgdir));
 
-	cprintf("touch before env pop\n");
 	unlock_kernel();
 	env_pop_tf(&e->env_tf);
 
