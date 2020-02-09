@@ -98,6 +98,22 @@ funs:
 		NOEC(t18_entry, T_MCHK)
 		NOEC(t19_entry, T_SIMDERR)
 
+		NOEC(Th32, 32)
+		NOEC(th33, 33)
+		NOEC(th34, 34)
+		NOEC(th35, 35)
+		NOEC(th36, 36)
+		NOEC(th37, 37)
+		NOEC(th38, 38)
+		NOEC(th39, 39)
+		NOEC(th40, 40)
+		NOEC(th41, 41)
+		NOEC(th42, 42)
+		NOEC(th43, 43)
+		NOEC(th44, 44)
+		NOEC(th45, 45)
+		NOEC(th46, 46)
+		NOEC(th47, 47)
 		NOEC(t48_entry, T_SYSCALL)
 
 .text

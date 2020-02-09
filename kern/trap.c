@@ -76,21 +76,27 @@ trap_init(void)
 
 	extern void (*funs[])(void);
 
-	int i;
+	int i, j;
 
 	for (i = 0; i < 20; i++) {
 		if (i == 9 || i == 15)
 			continue;
 
 		if (i == T_BRKPT) {
-			SETGATE(idt[T_BRKPT], 1, GD_KT, funs[T_BRKPT], 3);
+			SETGATE(idt[T_BRKPT], 0, GD_KT, funs[T_BRKPT], 3);
 			continue;
 		}
 
-		SETGATE(idt[i], 1, GD_KT, funs[i], 0);
+		SETGATE(idt[i], 0, GD_KT, funs[i], 0);
 	}
 
-	SETGATE(idt[T_SYSCALL], 1, GD_KT, t48_entry, 3);
+	j = i;
+
+	SETGATE(idt[T_SYSCALL], 0, GD_KT, t48_entry, 3);
+
+	for (i = 0; i < 16; i++) {
+		SETGATE(idt[i + IRQ_OFFSET], 0, GD_KT, funs[i + IRQ_OFFSET - j - 1], 0);
+	}
 
 	// Per-CPU setup 
 	trap_init_percpu();
