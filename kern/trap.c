@@ -72,8 +72,16 @@ trap_init(void)
 	extern struct Segdesc gdt[];
 
 	// LAB 3: Your code here.
-	extern void t48_entry();
 
+	// IRQ
+	extern void irq_timer();
+	extern void irq_kbd();
+	extern void irq_serial();
+	extern void irq_spurious();
+	extern void irq_ide();
+	extern void irq_error();
+
+	extern void t48_entry();
 	extern void (*funs[])(void);
 
 	int i, j;
@@ -90,13 +98,14 @@ trap_init(void)
 		SETGATE(idt[i], 0, GD_KT, funs[i], 0);
 	}
 
-	j = i;
-
 	SETGATE(idt[T_SYSCALL], 0, GD_KT, t48_entry, 3);
 
-	for (i = 0; i < 16; i++) {
-		SETGATE(idt[i + IRQ_OFFSET], 0, GD_KT, funs[i + IRQ_OFFSET - j - 1], 0);
-	}
+	SETGATE(idt[IRQ_OFFSET + IRQ_TIMER], 0, GD_KT, irq_timer, 0);
+	SETGATE(idt[IRQ_OFFSET + IRQ_KBD], 0, GD_KT, irq_kbd, 0);
+	SETGATE(idt[IRQ_OFFSET + IRQ_SERIAL], 0, GD_KT, irq_serial, 0);
+	SETGATE(idt[IRQ_OFFSET + IRQ_SPURIOUS], 0, GD_KT, irq_spurious, 0);
+	SETGATE(idt[IRQ_OFFSET + IRQ_IDE], 0, GD_KT, irq_ide, 0);
+	SETGATE(idt[IRQ_OFFSET + IRQ_ERROR], 0, GD_KT, irq_error, 0);
 
 	// Per-CPU setup 
 	trap_init_percpu();
@@ -220,6 +229,10 @@ trap_dispatch(struct Trapframe *tf)
 					  tf->tf_regs.reg_edi, tf->tf_regs.reg_esi);
 
 		tf->tf_regs.reg_eax = ret; /* save ret value in eax */
+		return;
+	case IRQ_OFFSET + IRQ_TIMER:
+		lapic_eoi();
+		sched_yield();
 		return;
 	default:
 		cprintf("unexpected trap\n");

@@ -31,43 +31,24 @@ sched_yield(void)
 	// LAB 4: Your code here.
 
 	// sched_halt never returns
-	int i, chosen;
+	int i, n;
 
-	if (curenv) {
-		chosen = ENVX(curenv->env_id);
-		i = chosen + 1;
-		envs[chosen].env_status = ENV_RUNNABLE;
-	}
-	else {
-		chosen = 0;
+	if (curenv)
+		i = ENVX(curenv->env_id) + 1;
+	else
 		i = 0;
-	}
 
-	for (; i < NENV; i++)  {
+	for (n = 0; n < NENV; n++, i++)  {
+		if (i >= NENV)
+			i = 0;
+
 		if (envs[i].env_status == ENV_RUNNABLE) {
-			chosen = i;
-			envs[i].env_status = ENV_RUNNING;
-			break;
+			env_run(&envs[i]);
 		}
 	}
 
-	if (chosen != i || chosen == 0) {
-		cprintf("enter %d, %d\n", chosen, i);
-		for (i = 0; i <= chosen; i++) {
-			if (envs[i].env_status == ENV_RUNNABLE) {
-				cprintf("chosen %d\n", chosen);
-				chosen = i;
-				envs[chosen].env_status = ENV_RUNNING;
-				break;
-			}
-		}
-	}
-
-	if (envs[chosen].env_status == ENV_RUNNING) {
-		curenv = &envs[chosen];
-		cprintf("run env %d\n", chosen);
+	if (curenv && curenv->env_status == ENV_RUNNING)
 		env_run(curenv);
-	}
 
 	cprintf("no env available, CPU %d halt.", cpunum());
 	sched_halt();
@@ -120,4 +101,3 @@ sched_halt(void)
 		"jmp 1b\n"
 	: : "a" (thiscpu->cpu_ts.ts_esp0));
 }
-

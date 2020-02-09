@@ -43,6 +43,13 @@
 	jmp _alltraps
 
 
+	TRAPHANDLER_NOEC(irq_timer, IRQ_OFFSET + IRQ_TIMER)
+	TRAPHANDLER_NOEC(irq_kbd, IRQ_OFFSET + IRQ_KBD)
+	TRAPHANDLER_NOEC(irq_serial, IRQ_OFFSET + IRQ_SERIAL)
+	TRAPHANDLER_NOEC(irq_spurious, IRQ_OFFSET + IRQ_SPURIOUS)
+	TRAPHANDLER_NOEC(irq_ide, IRQ_OFFSET + IRQ_IDE)
+	TRAPHANDLER_NOEC(irq_error, IRQ_OFFSET + IRQ_ERROR)
+
 #define	NOEC(name, num) 		\
 	.data 						;\
 		.long name				;\

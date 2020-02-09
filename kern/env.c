@@ -124,6 +124,7 @@ env_init(void)
 	env_free_list = NULL;
 
 	for (int i = NENV - 1; i >= 0; i--) {
+		envs[i].env_status = ENV_FREE;
 		envs[i].env_id = 0;
 		envs[i].env_link = env_free_list;
 		env_free_list = &envs[i];
@@ -408,7 +409,6 @@ load_icode(struct Env *e, uint8_t *binary)
 	memset((char *)USTACKTOP - PGSIZE, 0 , PGSIZE);
 
 	lcr3(PADDR(kern_pgdir));
-	cprintf("load icode successfull.");
 }
 
 //
