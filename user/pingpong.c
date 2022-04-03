@@ -21,8 +21,11 @@ umain(int argc, char **argv)
 			return;
 		i++;
 		ipc_send(who, i, 0, 0);
-		if (i == 10)
+		if (i == 10) {
+			cprintf("########reached 10 return\n");
 			return;
+		}
+		
 	}
 
 }

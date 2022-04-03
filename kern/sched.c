@@ -50,7 +50,7 @@ sched_yield(void)
 	if (curenv && curenv->env_status == ENV_RUNNING)
 		env_run(curenv);
 
-	cprintf("no env available, CPU %d halt.", cpunum());
+	cprintf("no env available, CPU %d halt.\n", cpunum());
 	sched_halt();
 }
 
