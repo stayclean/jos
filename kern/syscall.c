@@ -403,12 +403,15 @@ sys_ipc_try_send(envid_t envid, uint32_t value, void *srcva, unsigned perm)
 		rcv_env->env_ipc_perm = perm;
 	}
 
+	cprintf("send set up rcv status!!!!!!val %d\n", value);
+
 	rcv_env->env_ipc_from = curenv->env_id;
 	rcv_env->env_ipc_value = value;
 	rcv_env->env_ipc_recving = FALSE;
 
 	rcv_env->env_status = ENV_RUNNABLE;
 
+    rcv_env->env_tf.tf_regs.reg_eax = 0;
 	cprintf("before return\n");
 	return 0;
 }
@@ -440,6 +443,8 @@ sys_ipc_recv(void *dstva)
 
 	curenv->env_ipc_recving = TRUE;
 	curenv->env_status = ENV_NOT_RUNNABLE;
+
+	sched_yield();
 
 	cprintf("receive waiting done\n");
 	return 0;
