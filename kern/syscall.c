@@ -194,7 +194,7 @@ sys_page_alloc(envid_t envid, void *va, int perm)
 	if (ret)
 		return ret;
 
-	cprintf("alloc at 0x%x\n", va);
+	// cprintf("alloc at 0x%x\n", va);
 	if ((uintptr_t)va >= UTOP && !ALIGN(va, PGSIZE)) {
 		cprintf("invalid va 0x%x", va);
 		return -E_INVAL;
@@ -247,7 +247,7 @@ sys_page_map(envid_t srcenvid, void *srcva,
 	PageInfo *pp;
 	pte_t *pte;
 
-	cprintf("in sys map\n");
+	// cprintf("in sys map\n");
 	perm |= PTE_U | PTE_P;
 
 	if ((perm & ~(PTE_U | PTE_P | PTE_AVAIL | PTE_W)))
@@ -261,7 +261,7 @@ sys_page_map(envid_t srcenvid, void *srcva,
 	if (ret)
 		return ret;
 
-	cprintf("before align check\n");
+	// cprintf("before align check\n");
 	if ((uintptr_t)srcva >= UTOP && !ALIGN(srcva, PGSIZE)) {
 		cprintf("invalid srcva 0x%x", srcva);
 		return -E_INVAL;
@@ -272,7 +272,7 @@ sys_page_map(envid_t srcenvid, void *srcva,
 		return -E_INVAL;
 	}
 
-	cprintf("before lookup\n");
+	// cprintf("before lookup\n");
 	pp = page_lookup(es->env_pgdir, srcva, &pte);
 	if (!pp) {
 		cprintf("no page found at srcva 0x%x", srcva);
@@ -364,7 +364,7 @@ sys_ipc_try_send(envid_t envid, uint32_t value, void *srcva, unsigned perm)
 	Env *rcv_env;
 	int is_xfer = FALSE;
 
-	cprintf("enter kern send here!!!!!!!!!!!!!!!!\n");
+	//  cprintf("enter kern send here!!!!!!!!!!!!!!!!\n");
 	if (0 != envid2env(envid, &rcv_env, 0)) {
 		cprintf("bad env\n");
 		return -E_BAD_ENV;
@@ -372,7 +372,7 @@ sys_ipc_try_send(envid_t envid, uint32_t value, void *srcva, unsigned perm)
 
 	if (rcv_env->env_status != ENV_NOT_RUNNABLE
 		|| rcv_env->env_ipc_recving != TRUE) {
-		cprintf("not receiving\n");
+		// cprintf("not receiving\n");
 		return -E_IPC_NOT_RECV;
 	}
 
@@ -403,7 +403,7 @@ sys_ipc_try_send(envid_t envid, uint32_t value, void *srcva, unsigned perm)
 		rcv_env->env_ipc_perm = perm;
 	}
 
-	cprintf("send set up rcv status!!!!!!val %d\n", value);
+	// cprintf("send set up rcv status!!!!!!val %d\n", value);
 
 	rcv_env->env_ipc_from = curenv->env_id;
 	rcv_env->env_ipc_value = value;
@@ -412,7 +412,7 @@ sys_ipc_try_send(envid_t envid, uint32_t value, void *srcva, unsigned perm)
 	rcv_env->env_status = ENV_RUNNABLE;
 
     rcv_env->env_tf.tf_regs.reg_eax = 0;
-	cprintf("before return\n");
+	// cprintf("before return\n");
 	return 0;
 }
 
@@ -431,7 +431,7 @@ static int
 sys_ipc_recv(void *dstva)
 {
 	// LAB 4: Your code here.
-	cprintf("enter recv\n");
+	// cprintf("enter recv\n");
 	if ((uintptr_t)dstva < UTOP) {
 		if (FALSE == ALIGN(dstva, PGSIZE)) {
 			cprintf("dst not aligned to PGSIZE 0x%lx\n", dstva);

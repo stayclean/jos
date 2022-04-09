@@ -28,7 +28,7 @@ ipc_recv(envid_t *from_env_store, void *pg, int *perm_store)
 		pg = (void *)UTOP;
 
 	ret = sys_ipc_recv(pg);
-
+	// cprintf("return from rcv %d\n", ret);
 	if (ret) {
 		*from_env_store = 0;
 		*perm_store = 0;
@@ -56,15 +56,15 @@ ipc_send(envid_t to_env, uint32_t val, void *pg, int perm)
 	int ret;
 
 	if (pg == NULL) {
-		cprintf("NULL page\n");
+		// cprintf("NULL page\n");
 		pg = (void *)UTOP;
 	}
 
 	while (1) {
-		cprintf("resend %x\n", to_env);
+		// cprintf("resend to %x\n", to_env);
 		ret = sys_ipc_try_send(to_env, val, pg, perm);
 		if (ret == 0) {
-			cprintf("lib send done\n");
+			// cprintf("lib send done\n");
 			return;
 		}
 

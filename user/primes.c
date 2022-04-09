@@ -33,6 +33,8 @@ top:
 		if (i % p)
 			ipc_send(id, i, 0, 0);
 	}
+
+	return 0;
 }
 
 void
@@ -43,8 +45,11 @@ umain(int argc, char **argv)
 	// fork the first prime process in the chain
 	if ((id = fork()) < 0)
 		panic("fork: %e", id);
-	if (id == 0)
+	if (id == 0) {
 		primeproc();
+		// return;
+	}
+
 
 	// feed all the integers through
 	for (i = 2; ; i++)

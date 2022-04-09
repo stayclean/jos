@@ -386,7 +386,7 @@ page_fault_handler(struct Trapframe *tf)
 		return;
 	}
 
-	cprintf("handle! fault va 0x%x\n", fault_va);
+	// cprintf("handle! fault va 0x%x\n", fault_va);
 
 	if (tf->tf_esp >= UXSTACKTOP - PGSIZE && tf->tf_esp < UXSTACKTOP)
 		new_uxstack_bottom = tf->tf_esp - sizeof(struct UTrapframe) - 4;
