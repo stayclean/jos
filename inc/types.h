@@ -5,6 +5,9 @@
 #define NULL ((void*) 0)
 #endif
 
+#define TRUE 1
+#define FALSE 0
+
 // Represents true-or-false values
 typedef _Bool bool;
 enum { false, true };
@@ -66,6 +69,8 @@ typedef int32_t off_t;
 	uint32_t __n = (uint32_t) (n);				\
 	(typeof(a)) (ROUNDDOWN((uint32_t) (a) + __n - 1, __n));	\
 })
+
+#define ALIGN(a, n)	(!((uint32_t)(a) % (n)))
 
 #define ARRAY_SIZE(a)	(sizeof(a) / sizeof(a[0]))
 

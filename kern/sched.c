@@ -32,6 +32,26 @@ sched_yield(void)
 	// LAB 4: Your code here.
 
 	// sched_halt never returns
+	int i, n;
+
+	if (curenv)
+		i = ENVX(curenv->env_id) + 1;
+	else
+		i = 0;
+
+	for (n = 0; n < NENV; n++, i++)  {
+		if (i >= NENV)
+			i = 0;
+
+		if (envs[i].env_status == ENV_RUNNABLE) {
+			env_run(&envs[i]);
+		}
+	}
+
+	if (curenv && curenv->env_status == ENV_RUNNING)
+		env_run(curenv);
+
+	cprintf("no env available, CPU %d halt.\n", cpunum());
 	sched_halt();
 }
 
@@ -76,10 +96,9 @@ sched_halt(void)
 		"pushl $0\n"
 		"pushl $0\n"
 		// Uncomment the following line after completing exercise 13
-		//"sti\n"
+		"sti\n"
 		"1:\n"
 		"hlt\n"
 		"jmp 1b\n"
 	: : "a" (thiscpu->cpu_ts.ts_esp0));
 }
-

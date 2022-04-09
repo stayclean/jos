@@ -25,6 +25,10 @@ pgfault(struct UTrapframe *utf)
 	//   (see <inc/memlayout.h>).
 
 	// LAB 4: Your code here.
+	if (!(uvpt[PGNUM(utf->utf_fault_va)] & PTE_COW)
+		&& !(uvpt[PGNUM(utf->utf_fault_va)] & PTE_W))
+		panic("eid 0x%x, segmentation fault at 0x%x",
+			  thisenv->env_id, utf->utf_fault_va);
 
 	// Allocate a new page, map it at a temporary location (PFTEMP),
 	// copy the data from the old page to the new page, then move the new
@@ -33,8 +37,14 @@ pgfault(struct UTrapframe *utf)
 	//   You should make three system calls.
 
 	// LAB 4: Your code here.
+	addr = (void *)ROUNDDOWN(utf->utf_fault_va, PGSIZE);
+	r = sys_page_alloc(0, (void *)PFTEMP, PTE_W);
+	if (r)
+		panic("alloc");
 
-	panic("pgfault not implemented");
+	memcpy((void *)PFTEMP, addr, PGSIZE);
+	sys_page_map(0, (void *)PFTEMP, 0, addr, PTE_W);
+	sys_page_unmap(0, (void *)PFTEMP);
 }
 
 //
@@ -52,9 +62,23 @@ static int
 duppage(envid_t envid, unsigned pn)
 {
 	int r;
-
+	void *va = (void *)(pn*PGSIZE);
 	// LAB 4: Your code here.
-	panic("duppage not implemented");
+	if ((uvpt[pn] & PTE_W) || (uvpt[pn] & PTE_COW)) {
+		r = sys_page_map(0, va, envid, va, PTE_COW);
+		if (r)
+			panic("dup writable page %e\n", r);
+
+		r = sys_page_map(0, va, 0, va, PTE_COW);
+		if (r)
+			panic("dup parent page %e\n", r);
+	}
+	else {
+		r = sys_page_map(0, va, envid, va, 0);
+		if (r)
+			panic("dup read only page %e\n", r);
+	}
+
 	return 0;
 }
 
@@ -78,8 +102,50 @@ envid_t
 fork(void)
 {
 	// LAB 4: Your code here.
-	panic("fork not implemented");
+	int r;
+	envid_t eid_child;
+	int pn;
+	extern void _pgfault_upcall(void);
+
+	set_pgfault_handler(pgfault);
+
+	r = sys_exofork();
+	if (r < 0) {
+		return r;
+	}
+	else if (r == 0) {			/* child */
+		thisenv = &envs[ENVX(sys_getenvid())];
+		return 0;
+	}
+	else if (r > 0) {			/* parent */
+		eid_child = r;
+
+		for (pn = 0; pn < PGNUM(USTACKTOP); pn++) {
+			if ((uvpd[PDX(pn*PGSIZE)] & PTE_P) && (uvpt[pn] & PTE_P)
+				&& (uvpt[pn] & PTE_U))
+				duppage(eid_child, pn);
+		}
+
+		r = sys_page_alloc(eid_child, (void *)(UXSTACKTOP - PGSIZE), PTE_W);
+		if (r) {
+			sys_env_destroy(eid_child);
+			cprintf("alloc page failed, abandon fork");
+			return r;
+		}
+
+		r = sys_env_set_pgfault_upcall(eid_child, _pgfault_upcall);
+		if (r)
+			return r;
+
+		if (sys_env_set_status(eid_child, ENV_RUNNABLE))
+			panic("set child state failed");
+
+		return eid_child;
+	}
+
+	return -E_BAD_ENV;			/* should not be here */
 }
+
 
 // Challenge!
 int

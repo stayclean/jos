@@ -17,12 +17,16 @@ umain(int argc, char **argv)
 	while (1) {
 		uint32_t i = ipc_recv(&who, 0, 0);
 		cprintf("%x got %d from %x\n", sys_getenvid(), i, who);
+
 		if (i == 10)
 			return;
 		i++;
 		ipc_send(who, i, 0, 0);
-		if (i == 10)
+		if (i == 10) {
+			cprintf("########reached 10 return\n");
 			return;
+		}
+		
 	}
 
 }

@@ -32,7 +32,7 @@ syscall(int num, int check, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
 		     : "cc", "memory");
 
 	if(check && ret > 0)
-		panic("syscall %d returned %d (> 0)", num, ret);
+		panic("syscall %d returned %d (> 0)\n", num, ret);
 
 	return ret;
 }
@@ -116,4 +116,3 @@ sys_ipc_recv(void *dstva)
 {
 	return syscall(SYS_ipc_recv, 1, (uint32_t)dstva, 0, 0, 0, 0);
 }
-
