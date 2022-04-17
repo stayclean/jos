@@ -771,7 +771,8 @@ user_mem_check(struct Env *env, const void *va, size_t len, int perm)
 			return -E_FAULT;
 
 		pte = pgdir_walk(env->env_pgdir, addr, FALSE);
-		if (!pte || (*pte & (perm | PTE_P)) != (perm | PTE_P)) {
+		if (!pte || ((*pte & (perm | PTE_P)) != (perm | PTE_P))) {
+			cprintf("invalid pte 0x%x perm 0x%x\n", *pte, perm);
 			return -E_FAULT;
 		}
 	}

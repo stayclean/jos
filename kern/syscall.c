@@ -390,19 +390,20 @@ sys_ipc_try_send(envid_t envid, uint32_t value, void *srcva, unsigned perm)
 
 	rcv_env->env_ipc_perm = 0;
 
-	if ((uintptr_t)(rcv_env->env_ipc_dstva) < UTOP) {
-		if ((uintptr_t)srcva >= UTOP) {
-			cprintf("invalid mem, need less than %0xlx\n", UTOP);
+	if ((uintptr_t)srcva < UTOP) {
+		if ((uintptr_t)(rcv_env->env_ipc_dstva) >= UTOP) {
+			cprintf("invalid mem %p, need less than 0x%lx\n",
+					rcv_env->env_ipc_dstva, UTOP);
 			return -E_INVAL;
 		}
 
 		if (ALIGN(srcva, PGSIZE) == FALSE) {
-			cprintf("invalid mem, need page size align %0xlx\n", srcva);
+			cprintf("invalid mem, need page size align 0x%lx\n", srcva);
 			return -E_INVAL;
 		}
 
 		if (user_mem_check(curenv, srcva, PGSIZE, perm)) {
-			cprintf("invalid perm 0x%x at, %0xlx\n", perm, srcva);
+			cprintf("invalid perm 0x%x at, 0x%lx\n", perm, srcva);
 			return -E_INVAL;
 		}
 
