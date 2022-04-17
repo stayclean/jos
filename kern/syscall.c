@@ -376,7 +376,6 @@ sys_ipc_try_send(envid_t envid, uint32_t value, void *srcva, unsigned perm)
 	Env *rcv_env;
 	int is_xfer = FALSE;
 
-	//  cprintf("enter kern send here!!!!!!!!!!!!!!!!\n");
 	if (0 != envid2env(envid, &rcv_env, 0)) {
 		cprintf("bad env\n");
 		return -E_BAD_ENV;

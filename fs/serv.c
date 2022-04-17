@@ -9,7 +9,7 @@
 #include "fs.h"
 
 
-#define debug 0
+#define debug 1
 
 // The file system server maintains three structures
 // for each open file.
@@ -137,7 +137,7 @@ serve_open(envid_t envid, struct Fsreq_open *req,
 try_open:
 		if ((r = file_open(path, &f)) < 0) {
 			if (debug)
-				cprintf("file_open failed: %e", r);
+				cprintf("file_open failed: %e\n", r);
 			return r;
 		}
 	}
@@ -171,7 +171,9 @@ try_open:
 	// Share the FD page with the caller by setting *pg_store,
 	// store its permission in *perm_store
 	*pg_store = o->o_fd;
-	*perm_store = PTE_P|PTE_U|PTE_W|PTE_SHARE;
+
+	// *perm_store = PTE_P|PTE_U|PTE_W|PTE_SHARE;
+	*perm_store = PTE_P|PTE_U|PTE_W;
 
 	return 0;
 }
@@ -214,7 +216,21 @@ serve_read(envid_t envid, union Fsipc *ipc)
 		cprintf("serve_read %08x %08x %08x\n", envid, req->req_fileid, req->req_n);
 
 	// Lab 5: Your code here:
-	return 0;
+	struct OpenFile *o;
+	int r;
+
+	if ((r = openfile_lookup(envid, req->req_fileid, &o)) < 0)
+		return r;
+
+	r = file_read(o->o_file, ret->ret_buf, req->req_n, o->o_fd->fd_offset);
+
+	if (r > 0) {
+		o->o_fd->fd_offset += r;
+	} else {
+		cprintf("serve_read failed ret %d", r);
+	}
+
+	return r;
 }
 
 
@@ -295,7 +311,7 @@ void
 serve(void)
 {
 	uint32_t req, whom;
-	int perm, r;
+	int perm, r,  perm_old;
 	void *pg;
 
 	while (1) {
@@ -313,8 +329,11 @@ serve(void)
 		}
 
 		pg = NULL;
+		perm_old = perm;
 		if (req == FSREQ_OPEN) {
 			r = serve_open(whom, (struct Fsreq_open*)fsreq, &pg, &perm);
+			cprintf("return from serve open %d, perm 0x%x, before 0x%x\n",
+					r, perm, perm_old);
 		} else if (req < ARRAY_SIZE(handlers) && handlers[req]) {
 			r = handlers[req](whom, fsreq);
 		} else {
@@ -339,7 +358,7 @@ umain(int argc, char **argv)
 
 	serve_init();
 	fs_init();
-        fs_test();
+	fs_test();
 	serve();
 }
 

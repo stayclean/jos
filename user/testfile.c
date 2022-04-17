@@ -9,13 +9,16 @@ xopen(const char *path, int mode)
 {
 	extern union Fsipc fsipcbuf;
 	envid_t fsenv;
-	
+	int r;
+
 	strcpy(fsipcbuf.open.req_path, path);
 	fsipcbuf.open.req_omode = mode;
 
 	fsenv = ipc_find_env(ENV_TYPE_FS);
 	ipc_send(fsenv, FSREQ_OPEN, &fsipcbuf, PTE_P | PTE_W | PTE_U);
-	return ipc_recv(NULL, FVA, NULL);
+	r = ipc_recv(NULL, FVA, NULL);
+	cprintf("return from xopen %d\n", r);
+	return r;
 }
 
 void
@@ -33,6 +36,7 @@ umain(int argc, char **argv)
 	else if (r >= 0)
 		panic("serve_open /not-found succeeded!");
 
+	cprintf("xopen failed done\n");
 	if ((r = xopen("/newmotd", O_RDONLY)) < 0)
 		panic("serve_open /newmotd: %e", r);
 	if (FVA->fd_dev_id != 'f' || FVA->fd_offset != 0 || FVA->fd_omode != O_RDONLY)

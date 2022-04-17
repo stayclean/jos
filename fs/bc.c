@@ -24,6 +24,14 @@ va_is_dirty(void *va)
 	return (uvpt[PGNUM(va)] & PTE_D) != 0;
 }
 
+uint32_t blk2sect(uint32_t blockno)
+{
+	if (blockno == 0 || (super && blockno >= super->s_nblocks))
+		panic("bad block number %08x in diskaddr", blockno);
+
+	return blockno * BLKSECTS;
+}
+
 // Fault any disk block that is read in to memory by
 // loading it from disk.
 static void
@@ -48,7 +56,15 @@ bc_pgfault(struct UTrapframe *utf)
 	// the disk.
 	//
 	// LAB 5: you code here:
+	void *bc_addr = ROUNDDOWN(addr, PGSIZE);
+	r = sys_page_alloc(0, bc_addr, PTE_W|PTE_U|PTE_P);
+	if (r)
+		panic("alloc");
 
+	r = ide_read(blk2sect(blockno), bc_addr, BLKSECTS);
+	if (r) {
+		panic("ide read failed %r", r);
+	}
 	// Clear the dirty bit for the disk block page since we just read the
 	// block from disk
 	if ((r = sys_page_map(0, addr, 0, addr, uvpt[PGNUM(addr)] & PTE_SYSCALL)) < 0)
@@ -57,8 +73,15 @@ bc_pgfault(struct UTrapframe *utf)
 	// Check that the block we read was allocated. (exercise for
 	// the reader: why do we do this *after* reading the block
 	// in?)
+
+	cprintf("read in addr %p, blockno %d\n", addr, blockno);
+	// anwser: when bitmap is first time read in (after "bitmap" pointer is set)
+	// bitmap content will be need before is_free check.
+	// For ordinary cases, it's fine I think
 	if (bitmap && block_is_free(blockno))
 		panic("reading free block %08x\n", blockno);
+
+	return;
 }
 
 // Flush the contents of the block containing VA out to disk if
@@ -77,7 +100,27 @@ flush_block(void *addr)
 		panic("flush_block of bad va %08x", addr);
 
 	// LAB 5: Your code here.
-	panic("flush_block not implemented");
+	if (!va_is_mapped(addr)) {
+		cprintf("flush %p not mapped\n", addr);
+		return;
+	}
+
+	if (!va_is_dirty(addr)) {
+		return;
+	}
+
+	char *bc_addr = ROUNDDOWN(addr, PGSIZE);
+	int r;
+
+	r = ide_write(blk2sect(blockno), bc_addr, BLKSECTS);
+	if (r)
+		panic("ide write failed");
+
+	r = sys_page_map(0, addr, 0, addr, uvpt[PGNUM(addr)] & PTE_SYSCALL);
+	if (r < 0)
+		panic("in bc_flush, sys_page_map: %e", r);
+
+	return;
 }
 
 // Test that the block cache works, by smashing the superblock and

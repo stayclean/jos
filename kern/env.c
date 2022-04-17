@@ -434,6 +434,18 @@ env_create(uint8_t *binary, enum EnvType type)
 
 	e->env_type = type;
 
+/*
+    In protected mode, when it encounters an I/O instruction
+	   (IN, INS, OUT, or OUTS), the processor first checks whether CPL <= IOPL.
+	If this condition is true, the I/O operation may proceed.
+	If not true, the processor checks the I/O permission map.
+	(In virtual 8086 mode, the processor consults the map without regard
+	   for IOPL.
+*/
+	if (type == ENV_TYPE_FS) {
+		e->env_tf.tf_eflags |= FL_IOPL_3;
+	}
+
 	load_icode(e, binary);
 }
 
